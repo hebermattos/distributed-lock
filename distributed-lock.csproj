@@ -6,4 +6,9 @@
     <RootNamespace>distributed_lock</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="DistributedLock.Redis" Version="1.0.1" />
+    <PackageReference Include="StackExchange.Redis" Version="2.5.43" />
+  </ItemGroup>
+
 </Project>

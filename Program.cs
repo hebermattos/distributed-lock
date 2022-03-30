@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Medallion.Threading.Redis;
+using StackExchange.Redis;
 
 namespace distributed_lock
 {
@@ -11,8 +13,6 @@ namespace distributed_lock
 
         static async Task Main(string[] args)
         {
-            SemaphoreSlim _semaphoregate = new SemaphoreSlim(10);
-
             numbers = new List<int>();
 
             for (int i = 0; i < 100; i++)
@@ -20,16 +20,24 @@ namespace distributed_lock
                 numbers.Add(i);
             }
 
+            var redis = ConnectionMultiplexer.Connect("localhost");
+            var db = redis.GetDatabase();
+
+            var semaphore = new RedisDistributedSemaphore("MySemaphoreID", maxCount: 10, database: db);
+
             Parallel.ForEach(numbers, async number =>
             {
-                await _semaphoregate.WaitAsync();
-                await Console.Out.WriteLineAsync(number + " - Hello World: " + DateTime.Now.Second);
-                await Task.Delay(1000);
-                _semaphoregate.Release();
+                await using (await semaphore.AcquireAsync())
+                {
+                    var now = DateTime.Now;
+
+                    await Console.Out.WriteLineAsync(number + " - Hello World: " + now.Second);
+
+                    await Task.Delay(1000);
+                }
             });
 
             Console.ReadLine();
-
         }
     }
 }
